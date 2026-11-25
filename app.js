@@ -545,13 +545,26 @@ document.addEventListener('change',(event) => {
   if (event.target.id === 'quantity') { trialQuantity(true); updateEstimate(); }
 });
 history.scrollRestoration = 'manual';
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let pageMotion;
+reduceMotion.addEventListener?.('change', () => { if (reduceMotion.matches) pageMotion?.cancel(); });
 window.addEventListener('hashchange',() => {
   scrolls.set(renderedHash,window.scrollY);
+  const previousPage = route.page;
+  const previousEdition = route.key;
   route = getRoute();
   renderedHash = href(route.page,route.id);
   render();
-  $('#main').focus({preventScroll:true});
+  const main = $('#main');
+  main.focus({preventScroll:true});
   window.scrollTo(0,scrolls.get(renderedHash) || 0);
+  pageMotion?.cancel();
+  if (typeof main.animate === 'function' && !reduceMotion.matches && (previousPage !== route.page || previousEdition !== route.key)) {
+    pageMotion = main.animate(
+      [{opacity:.84,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],
+      {duration:180,easing:'cubic-bezier(.22,.76,.28,1)'},
+    );
+  }
 });
 renderedHash = href(route.page,route.id);
 render();

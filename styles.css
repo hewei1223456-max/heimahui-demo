@@ -211,3 +211,12 @@ legend{padding:0 4px;font-weight:670;font-size:.88rem}
 .hero p{text-wrap:pretty}
 .product-image img{object-fit:contain}
 @media (min-width:341px) and (max-width:570px){.top-actions .icon-button{width:44px}}
+:root{--ease-out:cubic-bezier(.22,.76,.28,1);--motion-press:105ms;--motion-enter:210ms}
+.button,.edition-button,.icon-button,.desktop-nav a,.mobile-nav a,.edition-choice,.round-link,.save-button,.segment{transition:background-color 150ms var(--ease-out),color 150ms var(--ease-out),transform var(--motion-press) var(--ease-out)}
+.desktop-nav a:active,.mobile-nav a:active,.edition-choice:active,.segment:active{transform:scale(.98)}
+.button.hero-button:focus-visible,.round-link:focus-visible{outline-color:#f5f3e9;outline-offset:4px}
+dialog[open]{opacity:1;transform:translateY(0) scale(1);transition:opacity var(--motion-enter) var(--ease-out),transform var(--motion-enter) var(--ease-out)}
+dialog[open]::backdrop{opacity:1;transition:opacity var(--motion-enter) var(--ease-out)}
+@starting-style{dialog[open]{opacity:0;transform:translateY(9px) scale(.988)}dialog[open]::backdrop{opacity:0}}
+@media(max-width:570px){@starting-style{dialog[open]{transform:translateY(16px)}}}
+@media(prefers-reduced-motion:reduce){@starting-style{dialog[open]{transform:none}}}
