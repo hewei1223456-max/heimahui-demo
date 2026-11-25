@@ -14,6 +14,7 @@ const icons = {
   calendar:'<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M8 4v4m8-4v4M4 11h16"/>',
   bookmark:'<path d="M6 4h12v16l-6-4-6 4z"/>', filter:'<path d="M4 7h16M7 12h10m-7 5h4"/>',
   close:'<path d="m6 6 12 12M18 6 6 18"/>', check:'<path d="m5 12 4 4L19 6"/>', minus:'<path d="M6 12h12"/>', plus:'<path d="M6 12h12m-6-6v12"/>',
+  pause:'<path d="M9 5v14m6-14v14"/>', play:'<path d="m9 5 11 7-11 7z"/>',
   grid:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
   chart:'<path d="M4 4v16h16M8 15l4-4 3 2 5-6"/>', book:'<path d="M12 6a8 8 0 0 0-8-1v14a8 8 0 0 1 8 1 8 8 0 0 1 8-1V5a8 8 0 0 0-8 1v14"/>',
 };
@@ -22,7 +23,7 @@ const esc = (input = '') => String(input).replace(/[&<>"']/g, (ch) => ({ '&':'&a
 const photo = (name, alt, eager = false) => `<img src="assets/${name}.webp" alt="${esc(alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async">`;
 const yuan = (value) => `¥${Number(value).toLocaleString('zh-CN')}`;
 const storageKey = 'heimahui-public-preview-v1';
-const defaults = () => ({ favorites:[], reads:[], intents:[], messages:[], followups:[], decisions:{}, reports:[], diagnosis:{}, question:'', promotionPaused:false });
+const defaults = () => ({ favorites:[], reads:[], intents:[], messages:[], followups:[], decisions:{}, reports:[], diagnosis:{}, question:'', promotionPaused:false, promotionChoices:['F01'] });
 function readData() {
   try { return { ...defaults(), ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; }
   catch { return defaults(); }
@@ -57,6 +58,15 @@ function getRoute() {
 let route = getRoute();
 let renderedHash = '';
 const scrolls = new Map();
+const promotionTypes = {F01:'平台推荐', F02:'商业推广', F03:'平台推荐'};
+const marketPromotions = fairs.map(item => ({...item,type:promotionTypes[item.id]}));
+const promotionChoices = () => Array.isArray(records.promotionChoices) ? records.promotionChoices : ['F01'];
+const activePromotions = () => records.promotionPaused ? [] : marketPromotions.filter(item => promotionChoices().includes(item.id));
+let disposePromotionRail;
+function updatePromotionRail() {
+  disposePromotionRail?.();
+  disposePromotionRail=mountPromotionRail($('#market-promotion-rail'),activePromotions(),id=>href('fair',id),reduceMotion);
+}
 const href = (page, id, key = route.key) => `#/${key}/${page}${id ? `/${id}` : ''}`;
 const link = (page, label, arrow = 'chevron', id) => `<a class="text-link" href="${href(page,id)}">${label}${icon(arrow,17)}</a>`;
 const button = (label, action, klass = 'button secondary', symbol = '', id = '') => `<button type="button" class="${klass}" data-action="${action}"${id ? ` data-id="${esc(id)}"` : ''}>${symbol ? icon(symbol,19) : ''}${label}</button>`;
@@ -163,9 +173,9 @@ function market() {
   const count = Object.values(state.filters).flat().length;
   const title = route.key === 'supplier' ? '货源广场' : '找货源';
   return `${head(title,'按门店风格、价格带与拿货条件筛选。',button(`筛选${count ? ` · ${count}` : ''}`,'filters','button secondary','filter'))}
-    <form class="search-bar" data-form="market"><label class="sr-only" for="market-query">搜索款名、款号、品类和厂家</label>${icon('search',21)}<input type="search" id="market-query" name="query" value="${esc(state.query)}" placeholder="搜款名、款号、品类或厂家"><button type="submit" class="button primary">搜索</button></form>
+    <form class="search-bar" data-form="market"><label class="sr-only" for="market-query">搜索款名、款号、品类和厂家</label>${icon('search',21)}<input type="search" id="market-query" name="query" value="${esc(state.query)}" placeholder="搜款名或厂家"><button type="submit" class="button primary">搜索</button></form>
     ${count ? `<div class="active-filters">${Object.entries(state.filters).flatMap(([key,values]) => values.map((value) => `<button type="button" class="segment selected" data-action="remove-filter" data-group="${key}" data-id="${esc(value)}" aria-label="移除${esc(value)}">${esc(value)}${icon('close',14)}</button>`)).join('')}${button('清空','clear-filters','text-link')}</div>` : ''}
-    ${records.promotionPaused ? '' : `<a class="fair-ribbon" href="${href('fair','F01')}"><div>${photo('shop','')}</div><span><small>近期订货会 · 示例</small><strong>冬季货盘开放日</strong></span>${icon('diagonal',21)}</a>`}
+    <div id="market-promotion-rail" hidden></div>
     <section class="section market-section">${heading('在看货源',link('fairs','订货会广场','diagonal'),`${found.length} 款示例货源`)}
       ${found.length ? `<div class="product-grid" id="market-products">${found.slice(0,state.marketLimit).map(productCard).join('')}</div>
         <p class="sr-only" id="market-progress" role="status"></p><div class="market-more" ${found.length<=state.marketLimit?'hidden':''}>${marketMore(found.length)}</div>` :
@@ -339,6 +349,17 @@ function review() {
       ${status ? '<p class="help">这次示例审核结果已保存在当前浏览器。</p>' :
       `<div class="button-row">${button('示例通过','approve','button primary','check',item.id)}${button('示例退回','reject','button secondary','close',item.id)}</div>`}</div>`;
 }
+function promotionDesk() {
+  return `<section class="surface stack promotion-desk"><div class="promotion-desk-heading">
+    <div><h2>找货页投放</h2><p>${records.promotionPaused ? '频道已暂停' : `当前展示 ${activePromotions().length} 场`}</p></div>
+    ${button(records.promotionPaused ? '恢复展示' : '暂停展示','pause-promotion','button secondary','calendar')}
+  </div><div class="promotion-desk-list">${marketPromotions.map(item=>{
+    const selected=promotionChoices().includes(item.id);
+    return `<div class="promotion-desk-row"><div><p>${item.type} · 示例</p><h3>${item.title}</h3><p>${item.city} · ${item.date}</p></div>
+      <button class="button secondary" type="button" data-action="toggle-placement" data-id="${item.id}" aria-pressed="${selected}"
+        aria-label="${selected ? '移除' : '展示'}${item.title}">${selected?'移除展示':'加入展示'}</button></div>`;
+  }).join('')}</div><a class="text-link" href="${href('market',null,'owner')}">查看找货页${icon('diagonal',17)}</a></section>`;
+}
 function desk() {
   const platform = route.key === 'platformDesk';
   const supplierMessages = records.messages.filter((m) => m.id === 'HM2601' || m.id === 'HM2602' || m.id === 'HM2606' || m.id.startsWith('B'));
@@ -355,7 +376,7 @@ function desk() {
     company: () => `<div class="surface stack form-layout"><h2>杭州北巷样品间</h2><p>示例主体。经营数据和记录由当前演示中的操作产生。</p>${button('查看联系名片','contact-card','button secondary','user')}</div>`,
     business: reviewList,
     knowledge: () => `<div class="surface list">${experts.map((item, index) => button(`${item.label} <span class="muted">${item.detail}</span>`,'desk-expert','list-button','book',String(index))).join('')}</div>`,
-    promotion: () => `<div class="surface stack form-layout"><h2>找货页活动展示</h2><p>冬季货盘开放日 · ${records.promotionPaused ? '示例已暂停' : '示例展示中'}</p>${button(records.promotionPaused ? '恢复展示' : '暂停展示','pause-promotion','button secondary','calendar')}</div>`,
+    promotion: promotionDesk,
     audit: () => `<div class="surface list">${rows.map(([label,value]) => `<div class="list-item"><span class="list-icon">${icon('chart')}</span><span><strong>${label}</strong><small>当前浏览器演示与样例记录</small></span><strong>${value}</strong></div>`).join('')}</div>`,
   };
   if (route.page !== 'overview' && byPage[route.page]) return `${head(nav[route.page][0],`${editions[route.key].label} · 示例数据`)}${byPage[route.page]()}`;
@@ -458,6 +479,7 @@ function render({stage = false} = {}) {
   document.title = `${$('.page h1')?.textContent || '女装选货与经营'} · 黑马汇`;
   $('.stepper [data-action="quantity-minus"]')?.setAttribute('aria-label','减少数量');
   $('.stepper [data-action="quantity-plus"]')?.setAttribute('aria-label','增加数量');
+  updatePromotionRail();
 }
 const actions = {
   close: () => dialog.close(),
@@ -510,6 +532,14 @@ const actions = {
   },
   'desk-expert': (id) => deskKnowledge(Number(id)),
   'pause-promotion': () => { records.promotionPaused = !records.promotionPaused; save(); render(); toast(records.promotionPaused ? '示例展示已暂停' : '示例展示已恢复'); },
+  'toggle-placement': (id) => {
+    if (!Object.hasOwn(promotionTypes,id)) return;
+    records.promotionChoices = toggle(promotionChoices(),id);
+    const persisted=save();
+    render();
+    document.querySelector(`[data-action="toggle-placement"][data-id="${id}"]`)?.focus({preventScroll:true});
+    if (!persisted) toast('展示设置已保留在本次浏览');
+  },
   approve: (id) => saveDecision(id,'审核通过'),
   reject: (id) => openDialog('退回修改',`<form class="stack" data-form="reject" data-id="${id}"><label for="reject-note">退回原因</label><textarea id="reject-note" name="reason" rows="3" maxlength="300" required></textarea><div class="sheet-actions"><button class="button primary" type="submit">确认示例退回</button></div></form>`),
   reset: () => openDialog('重置演示记录',`<div class="stack"><p>会清除当前浏览器保存的收藏、留言、诊断、审核与回访样例。</p><div class="sheet-actions">${button('确认重置','confirm-reset','button primary')}</div></div>`),
@@ -658,6 +688,12 @@ window.addEventListener('hashchange',() => {
     document.querySelector('[data-photo-transition]')?.removeAttribute('data-photo-transition');
   };
   transition.finished.then(cleanup,cleanup);
+});
+window.addEventListener('storage',event => {
+  if (event.key !== storageKey) return;
+  const before = activePromotions().map(item=>item.id).join();
+  records = readData();
+  if (route.page === 'market' && before !== activePromotions().map(item=>item.id).join()) updatePromotionRail();
 });
 renderedHash = href(route.page,route.id);
 render({stage:route.page === 'info'});

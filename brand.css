@@ -173,7 +173,37 @@
 .detail-image { border-radius:12px; background:#eae7dc }
 .detail-image img[src*="lookbook-"] { object-fit:contain }
 .detail-content { border-radius:12px; border-color:var(--line) }
-.fair-ribbon { background:#e9ece4; border-radius:8px }
+.promotion-rail {
+  display:flex; align-items:stretch; min-width:0; min-height:72px;
+  background:#e9ece4; color:var(--ink); border:1px solid #dce2d7; border-radius:10px;
+}
+.promotion-hit { display:flex; align-items:center; gap:13px; flex:1; padding-right:14px; min-width:0; }
+.promotion-photo { position:relative; align-self:stretch; flex:0 0 100px; display:block; overflow:hidden; border-radius:9px 0 0 9px; background:linear-gradient(135deg,#d9d3c4,#c6d1c3); }
+.promotion-photo img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.promotion-copy { flex:1; min-width:0; padding-block:7px; }
+.promotion-copy>* { display:block; line-height:1.4; overflow-wrap:anywhere; }
+.promotion-copy small { font-size:.73rem; color:#476155; font-weight:625; }
+.promotion-copy small[data-paid="true"] { color:#765139; }
+.promotion-copy strong { font-size:1rem; font-weight:650; }
+.promotion-hit>svg { flex:none; }
+.promotion-controls { display:flex; align-items:center; padding:0 7px; border-left:1px solid #d5ddd4; }
+.promotion-controls button { display:grid; place-items:center; width:44px; height:44px; padding:0; border-radius:50%; color:var(--green); }
+.promotion-controls button[hidden] { display:none; }
+.promotion-controls button:active { background:#d9e4d8; }
+.promotion-desk-heading,.promotion-desk-row { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:9px 15px; }
+.promotion-desk-heading p,.promotion-desk-row p { color:var(--muted); }
+.promotion-desk-row { padding:14px 0; border-top:1px solid var(--line); }
+.promotion-desk-row h3 { margin:3px 0; }
+.promotion-desk-row .button[aria-pressed="true"] { background:#e8ede5; }
+@media (max-width:570px) {
+  .promotion-rail { min-height:68px; }
+  .promotion-photo { flex-basis:clamp(51px,18vw,88px); }
+  .promotion-hit { gap:8px; padding-right:8px; }
+  .promotion-copy strong { font-size:.88rem; }
+  .promotion-controls { padding:0 2px; }
+  .promotion-rail:has(.promotion-controls) .promotion-hit>svg { display:none; }
+  .page-market .page-heading .button { flex:none; padding-inline:12px; white-space:nowrap; }
+}
 .page-market .search-bar { border-radius:9px }
 .page-market .section-heading h2 { font-size:clamp(1.34rem,2.45vw,2rem) }
 .surface,.search-bar,.empty { border-color:var(--line) }
