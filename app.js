@@ -33,7 +33,8 @@ function save() {
   catch { return false; }
   return true;
 }
-const state = { query:'', filters:{}, fairType:'', fairSeason:'', topic:'', diagTab:'report', expert:0 };
+const marketBatch = 4;
+const state = { query:'', filters:{}, marketLimit:marketBatch, fairType:'', fairSeason:'', topic:'', diagTab:'report', expert:0 };
 const dialog = $('#sheet');
 const queryFields = [
  ['style','风格',['通勤极简','法式简约','自然休闲']], ['city','产地',['杭州','濮院','广州','平湖']],
@@ -166,7 +167,27 @@ function market() {
     ${count ? `<div class="active-filters">${Object.entries(state.filters).flatMap(([key,values]) => values.map((value) => `<button type="button" class="segment selected" data-action="remove-filter" data-group="${key}" data-id="${esc(value)}" aria-label="移除${esc(value)}">${esc(value)}${icon('close',14)}</button>`)).join('')}${button('清空','clear-filters','text-link')}</div>` : ''}
     ${records.promotionPaused ? '' : `<a class="fair-ribbon" href="${href('fair','F01')}"><div>${photo('shop','')}</div><span><small>近期订货会 · 示例</small><strong>冬季货盘开放日</strong></span>${icon('diagonal',21)}</a>`}
     <section class="section market-section">${heading('在看货源',link('fairs','订货会广场','diagonal'),`${found.length} 款示例货源`)}
-      ${found.length ? `<div class="product-grid">${found.map(productCard).join('')}</div>` : empty('没有找到匹配的款','试着去掉一项筛选，或换一个搜索词。',button('重置搜索与筛选','reset-market'))}</section>`;
+      ${found.length ? `<div class="product-grid" id="market-products">${found.slice(0,state.marketLimit).map(productCard).join('')}</div>
+        <p class="sr-only" id="market-progress" role="status"></p><div class="market-more" ${found.length<=state.marketLimit?'hidden':''}>${marketMore(found.length)}</div>` :
+        empty('没有找到匹配的款','试着去掉一项筛选，或换一个搜索词。',button('重置搜索与筛选','reset-market'))}</section>`;
+}
+function marketMore(total) {
+  const available=Math.min(total-state.marketLimit,marketBatch);
+  return available>0 ? `<button type="button" class="button secondary" data-action="more-market" aria-controls="market-products">继续浏览 ${available} 款${icon('down',17)}</button>` : '';
+}
+function appendMarket() {
+  const grid=$('#market-products'), pager=$('.market-more');
+  if (!grid || !pager) return;
+  const found=goods.filter(matches), start=state.marketLimit;
+  const next=found.slice(start,start+marketBatch);
+  if (!next.length) return;
+  state.marketLimit=start+next.length;
+  grid.insertAdjacentHTML('beforeend',next.map(productCard).join(''));
+  grid.children[start].querySelector('a').focus({preventScroll:true});
+  pager.innerHTML=marketMore(found.length);
+  pager.hidden=state.marketLimit>=found.length;
+  $('#market-progress').textContent=state.marketLimit>=found.length
+    ? `已显示全部 ${found.length} 款` : `已显示 ${state.marketLimit} 款，共 ${found.length} 款`;
 }
 function missing(destination,name) {
   return `<section class="section">${empty(`找不到此${name}`,'这条示例可能已移除，或链接有误。',`<a class="button secondary" href="${href(destination)}">返回列表</a>`)}</section>`;
@@ -182,7 +203,7 @@ function product() {
     <article class="detail-content"><div class="badge-row">${pill(item.status)}${pill(item.style)}<span class="muted">款号 ${item.id}</span></div>
       <h1>${item.title}</h1><p>${item.fits}</p><p class="detail-price"><strong>${yuan(item.price)}</strong><span> / 件 · 示例拿货价</span></p>
       <dl class="detail-data"><div><dt>厂家</dt><dd><a href="${href('supplier',item.id)}">${item.supplier}${icon('chevron',14)}</a></dd></div><div><dt>产地</dt><dd>${item.city}</dd></div><div><dt>起批</dt><dd>${item.minimum} 件</dd></div><div><dt>预计发货</dt><dd>${item.dispatch}</dd></div></dl>
-      ${owner ? `<div class="quantity-line"><label for="quantity">试拿数量</label><div class="stepper">${button('','quantity-minus','','minus')}<input id="quantity" type="number" min="${item.minimum}" max="999" value="${item.minimum}" inputmode="numeric" aria-label="试拿数量">${button('','quantity-plus','','plus')}</div><output id="estimate">${yuan(item.minimum * item.price)}</output></div>` : ''}
+      ${owner ? `<div class="quantity-line"><label for="quantity">试拿数量</label><div class="stepper">${button('','quantity-minus','','minus')}<input id="quantity" type="number" min="1" max="999" value="${item.minimum}" inputmode="numeric" aria-label="试拿数量" aria-describedby="trial-note">${button('','quantity-plus','','plus')}</div><output id="estimate">${yuan(item.minimum * item.price)}</output></div><p class="trial-note" id="trial-note" role="status" hidden></p>` : ''}
       <div class="button-row">${owner ? button('复制试拿清单','copy-trial','button primary')+button('一对一咨询','compose','button secondary','message',item.id) : ''}
         <button type="button" class="button secondary" data-action="favorite" data-id="${item.id}" aria-pressed="${favorite}">${icon('bookmark',19)}${favorite ? '已收藏' : '收藏'}</button></div></article></div>
     <section class="section">${heading('继续选款',link('market','更多货源'))}<div class="product-grid">${goods.slice(index+1).concat(goods.slice(0,index)).slice(0,4).map(productCard).join('')}</div></section>`;
@@ -372,27 +393,33 @@ function followup(id) {
   if (!buyer) return;
   openDialog('记入回访',`<form class="stack" data-form="followup" data-id="${id}"><p>${buyer.name} · 示例</p><label for="next-step">下一步</label><textarea name="text" id="next-step" rows="3" maxlength="300" required placeholder="例如 两天后确认试拿偏好"></textarea><div class="sheet-actions"><button class="button primary" type="submit">保存计划</button></div></form>`);
 }
-function trialQuantity(update = false) {
+function trialQuantity() {
   const field = $('#quantity');
-  if (!field) return 0;
-  const quantity = Math.min(Number(field.max),Math.max(Number(field.min),Math.floor(Number(field.value)) || 0));
-  if (update) field.value = String(quantity);
-  return quantity;
+  const quantity=field?.valueAsNumber;
+  return Number.isSafeInteger(quantity) && quantity>=1 && quantity<=Number(field.max) ? quantity : null;
 }
 function updateEstimate() {
   const item = goods.find((one) => one.id === route.id);
-  if (item && $('#estimate')) $('#estimate').textContent = yuan(item.price * trialQuantity());
+  if (!item || !$('#estimate')) return;
+  const count=trialQuantity(), below=count!==null&&count<item.minimum;
+  $('#estimate').textContent=count===null?'—':below?'待确认':yuan(item.price*count);
+  const note=$('#trial-note');
+  note.textContent=count===null?'请输入 1 至 999 的整数件数。':below?`低于 ${item.minimum} 件起批量，可先询问是否支持试拿。`:'';
+  note.hidden=!note.textContent;
 }
 async function copyTrial() {
   const item = goods.find((one) => one.id === route.id);
   if (!item) return;
-  const quantity = trialQuantity(true);
-  updateEstimate();
-  const lines = `黑马汇 · 示例试拿清单\n${item.title}（${item.id}）\n厂家：${item.supplier}\n${item.status}，${item.minimum} 件起，预计 ${item.dispatch} 发货\n计划试拿 ${quantity} 件 × ${yuan(item.price)}，货款估算 ${yuan(quantity * item.price)}\n请确认混批、补货与运费。`;
+  const quantity = trialQuantity();
+  if (quantity===null) { updateEstimate(); $('#quantity').focus(); return; }
+  const countLine=quantity<item.minimum?`计划试拿 ${quantity} 件，低于起批量，货款待确认`:
+    `计划试拿 ${quantity} 件 × ${yuan(item.price)}，货款估算 ${yuan(quantity * item.price)}`;
+  const lines = `黑马汇 · 示例试拿清单\n${item.title}（${item.id}）\n厂家：${item.supplier}\n${item.status}，${item.minimum} 件起，预计 ${item.dispatch} 发货\n${countLine}\n请确认混批、补货与运费。`;
   try {
     await navigator.clipboard.writeText(lines);
-    toast('已复制试拿清单');
+    if (route.page==='product'&&route.id===item.id) toast('已复制试拿清单');
   } catch {
+    if (route.page!=='product'||route.id!==item.id) return;
     openDialog('试拿清单',`<p>可长按或选中文本后复制。</p><label class="sr-only" for="copy-list">完整试拿清单</label><textarea class="copy-text" id="copy-list" readonly rows="7">${esc(lines)}</textarea>`);
     $('#copy-list').select();
   }
@@ -438,20 +465,21 @@ const actions = {
   editions: chooseEdition,
   filters: openFilters,
   'clear-sheet': () => dialog.querySelectorAll('input[type="checkbox"]').forEach((field) => { field.checked = false; }),
-  'remove-filter': (id,trigger) => { const { group } = trigger.dataset; state.filters[group] = (state.filters[group] || []).filter((value) => value !== id); render(); },
-  'clear-filters': () => { state.filters = {}; render(); },
-  'reset-market': () => { state.filters = {}; state.query = ''; render(); },
+  'remove-filter': (id,trigger) => { const { group } = trigger.dataset; state.filters[group] = (state.filters[group] || []).filter((value) => value !== id); state.marketLimit=marketBatch; render(); },
+  'clear-filters': () => { state.filters = {}; state.marketLimit=marketBatch; render(); },
+  'reset-market': () => { state.filters = {}; state.query = ''; state.marketLimit=marketBatch; render(); },
+  'more-market':appendMarket,
   'clear-fairs': () => { state.fairType = ''; state.fairSeason = ''; render(); },
   topic: (id) => { state.topic = id || ''; render(); },
   favorite: (id) => {
     records.favorites = toggle(records.favorites,id);
     const selected = records.favorites.includes(id);
-    save();
+    const persisted=save();
     const previous = $('#quantity')?.value;
     render();
     if (previous !== undefined && $('#quantity')) { $('#quantity').value = previous; updateEstimate(); }
     document.querySelector(`[data-action="favorite"][data-id="${id}"]`)?.focus({preventScroll:true});
-    toast(selected ? '已收藏此款' : '已取消收藏');
+    toast(!persisted ? '更改已保留在本次浏览' : selected ? '已收藏此款' : '已取消收藏');
   },
   'read-save': (id) => { records.reads = toggle(records.reads,id); save(); render(); toast(records.reads.includes(id) ? '已收藏资讯' : '已取消收藏'); },
   intent: (id) => {
@@ -496,15 +524,17 @@ function saveDecision(id,status) {
   toast(`已记录示例结果：${status}`);
 }
 const forms = {
-  market: (values) => { state.query = values.get('query') || ''; render(); },
+  market: (values) => { state.query = values.get('query') || ''; state.marketLimit=marketBatch; render(); },
   'global-search': (values) => {
     state.query = values.get('query') || '';
+    state.marketLimit=marketBatch;
     dialog.close();
     if (!editions[route.key].nav.includes('market')) location.hash = href('market',null,'owner');
     else go('market');
   },
   filters: (values) => {
     state.filters = Object.fromEntries(queryFields.map(([key]) => [key,values.getAll(key)]));
+    state.marketLimit=marketBatch;
     dialog.close(); render();
   },
   fairs: (values) => { state.fairType = values.get('type'); state.fairSeason = values.get('season'); render(); },
@@ -563,9 +593,6 @@ document.addEventListener('input',(event) => {
   if (event.target.id === 'expert-question') { rememberQuestion(); save(); }
   if (event.target.closest('[data-form="diagnosis"]')) { readDiagnosis(); save(); }
 });
-document.addEventListener('change',(event) => {
-  if (event.target.id === 'quantity') { trialQuantity(true); updateEstimate(); }
-});
 history.scrollRestoration = 'manual';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const galleries = new Set(['info','market','favorites','supplier']);
@@ -585,7 +612,9 @@ function showRoute(next,sharedPhoto = false) {
   renderedHash = href(route.page,route.id);
   render({stage:route.page === 'info' && previous.page !== 'info'});
   const main = $('#main');
-  main.focus({preventScroll:true});
+  const returned = route.page==='market' && previous.key===route.key && previous.page==='product' &&
+    findProductImage(previous.id)?.closest('a');
+  (returned||main).focus({preventScroll:true});
   window.scrollTo(0,scrolls.get(renderedHash) || 0);
   pageMotion?.cancel();
   if (!sharedPhoto && typeof main.animate === 'function' && !reduceMotion.matches && (previous.page !== route.page || previous.key !== route.key)) {

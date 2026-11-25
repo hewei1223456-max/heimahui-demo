@@ -148,6 +148,9 @@
 .segment { border-radius:25px; border-color:transparent; background:transparent }
 .segment.selected { border-color:#cdd8cc; background:#e8ede5 }
 .active-filters .segment { border-color:#ccd5ca }
+.market-more:not([hidden]) { display:flex; justify-content:center; margin-block:24px 12px }
+.market-more .button { min-height:46px }
+.detail-content .trial-note { margin:0; color:var(--muted) }
 .journal-grid { display:grid; grid-template-columns:1.32fr 1fr; gap:24px }
 .story-card,.fair-card { border:0; border-radius:10px; background:#efeee6 }
 .journal-grid>.story-card { background:var(--stage-ink); color:#f5f5ec; }
