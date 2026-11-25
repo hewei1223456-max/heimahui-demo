@@ -106,7 +106,7 @@ function renderShell() {
 function productCard(item) {
   const favorite = records.favorites.includes(item.id);
   return `<article class="product-card"><a class="product-link" href="${href('product',item.id)}">
-    <div class="product-image">${photo(item.image,`${item.title}款式示意`)}<span class="stock-tag ${item.status === '预售' ? 'preorder' : ''}">${item.status}</span></div>
+    <div class="product-image" data-product-photo="${item.id}">${photo(item.image,`${item.title}款式示意`)}<span class="stock-tag ${item.status === '预售' ? 'preorder' : ''}">${item.status}</span></div>
     <div class="product-data"><div class="product-origin">${item.city} <span>·</span> ${item.style}</div>
       <h3>${item.title}</h3><div class="product-line"><strong>${yuan(item.price)}</strong><span> / 件</span><span>${item.minimum} 件起</span></div>
     </div></a><button type="button" class="save-button${favorite ? ' active' : ''}" data-action="favorite" data-id="${item.id}" aria-label="${favorite ? '取消收藏' : '收藏'}${item.title}" aria-pressed="${favorite}">${icon('bookmark',19)}</button></article>`;
@@ -178,7 +178,7 @@ function product() {
   const owner = ['owner','operator'].includes(route.key);
   const index = goods.indexOf(item);
   return `${back('market','返回货源列表')}<div class="detail-grid">
-    <div class="detail-image">${photo(item.image,`${item.title}款式示意`,true)}</div>
+    <div class="detail-image" data-product-photo="${item.id}">${photo(item.image,`${item.title}款式示意`,true)}</div>
     <article class="detail-content"><div class="badge-row">${pill(item.status)}${pill(item.style)}<span class="muted">款号 ${item.id}</span></div>
       <h1>${item.title}</h1><p>${item.fits}</p><p class="detail-price"><strong>${yuan(item.price)}</strong><span> / 件 · 示例拿货价</span></p>
       <dl class="detail-data"><div><dt>厂家</dt><dd><a href="${href('supplier',item.id)}">${item.supplier}${icon('chevron',14)}</a></dd></div><div><dt>产地</dt><dd>${item.city}</dd></div><div><dt>起批</dt><dd>${item.minimum} 件</dd></div><div><dt>预计发货</dt><dd>${item.dispatch}</dd></div></dl>
@@ -568,25 +568,67 @@ document.addEventListener('change',(event) => {
 });
 history.scrollRestoration = 'manual';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const galleries = new Set(['info','market','favorites','supplier']);
 let pageMotion;
-reduceMotion.addEventListener?.('change', () => { if (reduceMotion.matches) pageMotion?.cancel(); });
-window.addEventListener('hashchange',() => {
-  scrolls.set(renderedHash,window.scrollY);
-  const previousPage = route.page;
-  const previousEdition = route.key;
-  route = getRoute();
+let photoMotion;
+let navigationRevision = 0;
+function findProductImage(productId) {
+  const boxes = $('#main').querySelectorAll('[data-product-photo]');
+  for (const box of boxes) {
+    if (box.dataset.productPhoto === productId) return box.querySelector('img');
+  }
+  return null;
+}
+function showRoute(next,sharedPhoto = false) {
+  const previous = route;
+  route = next;
   renderedHash = href(route.page,route.id);
-  render({stage:route.page === 'info' && previousPage !== 'info'});
+  render({stage:route.page === 'info' && previous.page !== 'info'});
   const main = $('#main');
   main.focus({preventScroll:true});
   window.scrollTo(0,scrolls.get(renderedHash) || 0);
   pageMotion?.cancel();
-  if (typeof main.animate === 'function' && !reduceMotion.matches && (previousPage !== route.page || previousEdition !== route.key)) {
+  if (!sharedPhoto && typeof main.animate === 'function' && !reduceMotion.matches && (previous.page !== route.page || previous.key !== route.key)) {
     pageMotion = main.animate(
       [{opacity:.84,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],
       {duration:180,easing:'cubic-bezier(.22,.76,.28,1)'},
     );
   }
+}
+reduceMotion.addEventListener?.('change', () => {
+  if (reduceMotion.matches) {
+    pageMotion?.cancel();
+    photoMotion?.skipTransition();
+  }
+});
+window.addEventListener('hashchange',() => {
+  const version = ++navigationRevision;
+  photoMotion?.skipTransition();
+  document.querySelector('[data-photo-transition]')?.removeAttribute('data-photo-transition');
+  scrolls.set(renderedHash,window.scrollY);
+  const next = getRoute();
+  const returning = route.page === 'product' && galleries.has(next.page);
+  const opening = next.page === 'product' && galleries.has(route.page);
+  const productId = returning ? route.id : opening ? next.id : null;
+  const previousImage = next.key === route.key && productId ? findProductImage(productId) : null;
+  if (!previousImage?.complete || !previousImage.naturalWidth || reduceMotion.matches || typeof document.startViewTransition !== 'function') {
+    showRoute(next);
+    return;
+  }
+  previousImage.setAttribute('data-photo-transition','');
+  const transition = document.startViewTransition(() => {
+    if (version !== navigationRevision) return;
+    showRoute(next,true);
+    findProductImage(productId)?.setAttribute('data-photo-transition','');
+  });
+  photoMotion = transition;
+  transition.ready.catch(() => {});
+  const cleanup = () => {
+    if (photoMotion !== transition) return;
+    photoMotion = null;
+    document.querySelector('[data-photo-transition]')?.removeAttribute('data-photo-transition');
+  };
+  transition.finished.then(cleanup,cleanup);
 });
 renderedHash = href(route.page,route.id);
 render({stage:route.page === 'info'});
