@@ -254,7 +254,7 @@ dialog[open]::backdrop { opacity:1 }
   .stage-kicker { font-size:.73rem }
   .stage-intro { max-width:23em; font-size:.87rem; line-height:1.48; margin-bottom:14px }
   .button.stage-button { min-height:44px; padding:7px 15px }
-  .stage-label { inset:auto auto 10px 17px; color:#363e37; font-size:.69rem; background:#e9e4daf0; border-radius:4px; padding:2px 6px }
+  .stage-label { inset:auto auto max(62px,calc(env(safe-area-inset-bottom) + 50px)) 17px; color:#363e37; font-size:.69rem; background:#e9e4daf0; border-radius:4px; padding:2px 6px }
   .journal-wrap { padding-inline:16px }
   .utility-line { padding:9px 0; gap:0 }
   .utility-line a { min-height:61px; padding:5px; display:flex; flex-direction:column; justify-content:center; text-align:center; gap:2px; line-height:1.31 }
