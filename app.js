@@ -91,9 +91,11 @@ function navItems(mobile = false) {
 }
 function renderShell() {
   const edition = editions[route.key];
+  const isDesk = route.key.endsWith('Desk');
+  document.body.classList.toggle('is-console',isDesk);
   $('#top').innerHTML = `<div class="top-inner">
     <a class="brand" href="${href(edition.first)}"><img src="assets/mark.svg" alt="" width="38" height="38"><span>黑马汇</span></a>
-    <nav class="desktop-nav" aria-label="主导航">${navItems()}</nav>
+    ${isDesk ? `<span class="top-context">${edition.label}</span>` : `<nav class="desktop-nav" aria-label="主导航">${navItems()}</nav>`}
     <div class="top-actions"><button type="button" class="icon-button top-search" data-action="search" aria-label="搜索货源">${icon('search')}</button>
       <a class="icon-button top-message" aria-label="消息" href="${href('messages')}">${icon('message')}</a>
       <button type="button" data-action="editions" class="edition-button" aria-label="切换演示身份，当前${edition.label}"><span class="edition-mark"></span><span>${edition.label}</span>${icon('down',14)}</button></div>
@@ -116,18 +118,33 @@ function storyCard(item) {
 function info() {
   const topics = ['', '组货笔记','经营方法','产业带观察'];
   const results = stories.filter((item) => !state.topic || item.topic === state.topic);
-  return `<div class="landing-heading"><div><span class="eyebrow"><i></i> 女装店主的经营工作台</span><h1>今日黑马汇</h1></div><span class="demo-tag">演示版 <span>·</span> 示例资料</span></div>
-    <section class="hero-grid" aria-label="今日推荐">
-      <article class="hero"><div class="hero-photo">${photo('shop','自然光下的女装门店与陈列衣架',true)}</div>
-        <div class="hero-copy"><span class="hero-kicker"><i></i> 换季选货</span><h2>为好店，<br>找好货。</h2><p>按风格、产地与起批条件，找适合你门店的下一款。</p><a class="button hero-button" href="${href('market')}">进入找货源${icon('arrow',18)}</a></div></article>
-      <article class="activity-peek"><div class="activity-photo">${photo('texture','暖色针织面料细节',true)}</div>
-        <div class="activity-copy"><span class="eyebrow">订货会广场</span><h2>冬季货盘<br>开放日</h2><p>杭州 · 12 月 06–07 日</p><a class="round-link" aria-label="查看冬季货盘开放日" href="${href('fair','F01')}">${icon('diagonal',22)}</a></div></article>
+  const third = route.key === 'supplier' ? ['buyers','找客户','查看店主拿货需求','users'] : ['diagnosis','店铺诊断','整理门店经营问题','compass'];
+  const shortcuts = [
+    ['market',route.key === 'supplier' ? '货源广场' : '筛选货源','风格、产地与起批量','bag'],
+    ['fairs','订货会广场','查看样例场次与看样意向','calendar'],
+    third,
+  ];
+  return `<section class="brand-stage" aria-label="黑马汇选货">
+      <div class="brand-stage-art">${photo('season-atelier','羊毛剪裁夹克与细褶长裤的目录示意摄影',true)}</div>
+      <div class="brand-stage-copy"><p class="stage-kicker">黑马汇 · 女装经营平台</p>
+        <h1>女装选货，<br>有章法。</h1>
+        <p class="stage-intro">按风格、产地和起批量筛款，带上清单直接询货。</p>
+        <a class="button stage-button" href="${href('market')}">进入找货源${icon('arrow',18)}</a>
+      </div>
+      <span class="stage-label">交互演示 · 示例货源</span>
     </section>
-    <section class="section">${heading('精选货源',link('market','查看全部'),'本期选品样例，可查看款式与试拿条件')}
-      <div class="product-grid home-products">${goods.slice(0,4).map(productCard).join('')}</div></section>
-    <section class="section editorial">${heading('经营资讯')}
-      <div class="segments" aria-label="资讯频道">${topics.map((topic) => `<button type="button" class="segment${state.topic === topic ? ' selected' : ''}" data-action="topic" data-id="${topic}" aria-pressed="${state.topic === topic}">${topic || '全部资讯'}</button>`).join('')}</div>
-      <div class="story-grid">${results.map(storyCard).join('')}</div></section>`;
+    <div class="journal-wrap">
+      <section class="utility-line" aria-label="常用经营入口">
+        ${shortcuts.map(([path,title,description,symbol]) => `<a href="${href(path)}"><span class="utility-icon">${icon(symbol,22)}</span><span><strong>${title}</strong><small>${description}</small></span>${icon('chevron',17)}</a>`).join('')}
+      </section>
+      <section class="section assortment">${heading('本期选品',link('market','查看全部货源','arrow'),'面向换季陈列的四种款式。')}
+        <div class="product-grid home-products">${goods.slice(0,4).map(productCard).join('')}</div>
+      </section>
+      <section class="section editorial">${heading('经营手记')}
+        <div class="segments" aria-label="资讯频道">${topics.map((topic) => `<button type="button" class="segment${state.topic === topic ? ' selected' : ''}" data-action="topic" data-id="${topic}" aria-pressed="${state.topic === topic}">${topic || '全部资讯'}</button>`).join('')}</div>
+        ${state.topic ? `<div class="story-grid">${results.map(storyCard).join('')}</div>` : `<div class="journal-grid">${storyCard(stories[0])}<div class="journal-side">${stories.slice(1).map((item) => listLink('article',item.title,item.topic,'book',item.id)).join('')}<a class="journal-fair" href="${href('fair','F01')}"><span>样例场次 · 杭州</span><strong>冬季货盘开放日</strong>${icon('diagonal',19)}</a></div></div>`}
+      </section>
+    </div>`;
 }
 function matches(item) {
   const query = state.query.trim().toLowerCase();
@@ -401,11 +418,16 @@ const views = {
   history:historyPage, report, buyers:buyerList, demand, operations, review, overview:desk, stock:desk, follow:desk, events:desk,
   company:desk, business:desk, knowledge:desk, promotion:desk, audit:desk,
 };
-function render() {
+function render({stage = false} = {}) {
   renderShell();
   const main = $('#main');
-  main.className = `page page-${route.page}${route.key.endsWith('Desk') ? ' desk' : ''}`;
-  main.innerHTML = (views[route.page] || info)();
+  const isDesk = route.key.endsWith('Desk');
+  main.className = `page page-${route.page}${isDesk ? ' desk' : ''}`;
+  main.toggleAttribute('data-stage-motion',stage);
+  const markup = (views[route.page] || info)();
+  main.innerHTML = isDesk
+    ? `<aside class="desk-sidebar"><nav class="desktop-nav" aria-label="后台导航">${navItems(true)}</nav></aside><div class="desk-body">${markup}</div>`
+    : markup;
   document.title = `${$('.page h1')?.textContent || '女装选货与经营'} · 黑马汇`;
   $('.stepper [data-action="quantity-minus"]')?.setAttribute('aria-label','减少数量');
   $('.stepper [data-action="quantity-plus"]')?.setAttribute('aria-label','增加数量');
@@ -554,7 +576,7 @@ window.addEventListener('hashchange',() => {
   const previousEdition = route.key;
   route = getRoute();
   renderedHash = href(route.page,route.id);
-  render();
+  render({stage:route.page === 'info' && previousPage !== 'info'});
   const main = $('#main');
   main.focus({preventScroll:true});
   window.scrollTo(0,scrolls.get(renderedHash) || 0);
@@ -567,4 +589,4 @@ window.addEventListener('hashchange',() => {
   }
 });
 renderedHash = href(route.page,route.id);
-render();
+render({stage:route.page === 'info'});
