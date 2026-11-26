@@ -307,7 +307,8 @@ function inquiryTarget(id) {
   const product = goods.find(item => item.id === id);
   const buyer = buyers.find(item => item.id === id);
   if (product) return { product, ownerAccountId: currentDemoOwner().id, factoryProduct: goods.find(item => item.supplier === product.supplier) };
-  if (buyer) return { buyer, ownerAccountId: buyer.id, factoryProduct: goods.find(item => item.id === demoFactoryProduct) };
+  if (buyer) return { buyer, ownerAccountId: buyer.ownerAccountId || buyer.id,
+    factoryProduct: goods.find(item => item.id === demoFactoryProduct) };
   return null;
 }
 
@@ -322,10 +323,10 @@ function previewInquiries() {
   records.messages.forEach(message => {
     const source = inquiryTarget(message.id);
     const ownerAccountId = message.ownerAccountId || source?.buyer?.id || 'owner-01';
-    const factoryProductId = message.factoryProductId || source?.factoryProduct.id;
+    const factoryProductId = message.factoryProductId || source?.factoryProduct?.id;
     if (!factoryProductId || (buyerSide ? ownerAccountId !== currentDemoOwner().id : factoryProductId !== demoFactoryProduct)) return;
     const factoryProduct = goods.find(item => item.id === factoryProductId);
-    const buyer = buyers.find(item => item.id === ownerAccountId);
+    const buyer = buyers.find(item => item.id === ownerAccountId || item.ownerAccountId === ownerAccountId);
     const account = buyer ? null : demoOwnerById(ownerAccountId);
     if (!factoryProduct || (!buyer && !account)) return;
     const id = inquiryId(ownerAccountId, factoryProductId);

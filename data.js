@@ -101,6 +101,11 @@ const previewData = (() => {
     ['通勤','极简'],['通勤','极简'],['休闲','极简'],['轻熟','复古'],['轻熟','通勤'],
     ['通勤','极简'],['休闲','通勤'],['轻熟','复古'],['轻熟','通勤'],['休闲','复古'],
   ];
+  for (const shop of demoOwners) {
+    buyers.push({id:'demand-'+shop.id,ownerAccountId:shop.id,name:shop.shop,city:shop.city,
+      mode:'女装门店 · 示例',style:shop.style,budget:'¥100–220 / 件',
+      needs:`找${shop.style}现货，先小单试拿，再核对稳定补货的条件。`});
+  }
   const stockCategories=['外套','休闲裤','衬衫','针织衫','半裙','套装','外套','连衣裙','外套','针织衫'];
   goods.forEach((item,index)=>{
     item.styleTags=stockStyles[index];
