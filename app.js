@@ -202,7 +202,7 @@ function market() {
   const count = Object.values(state.filters).flat().length;
   const filters = button(`筛选${count ? ` · ${count}` : ''}`,'filters','button secondary','filter');
   const actions = route.key === 'supplierDesk' ?
-    `<div class="market-head-actions"><a class="button secondary" href="${href('stock')}">${icon('chart',19)}查看我的货源数据</a>${filters}</div>` : filters;
+    `<div class="market-head-actions"><a class="button secondary" href="${href('overview','stock')}">${icon('chart',19)}查看我的货源数据</a>${filters}</div>` : filters;
   return `${head(marketTitle(),'按门店风格、价格带与拿货条件筛选。',actions)}
     <form class="search-bar" data-form="market"><label class="sr-only" for="market-query">搜索款名、款号、品类和厂家</label>${icon('search',21)}<input type="search" id="market-query" name="query" value="${esc(state.query)}" placeholder="搜款名或厂家"><button type="submit" class="button primary">搜索</button></form>
     ${count ? `<div class="active-filters">${Object.entries(state.filters).flatMap(([key,values]) => values.map((value) => `<button type="button" class="segment selected" data-action="remove-filter" data-group="${key}" data-id="${esc(value)}" aria-label="移除${esc(value)}">${esc(value)}${icon('close',14)}</button>`)).join('')}${button('清空','clear-filters','text-link')}</div>` : ''}
@@ -508,7 +508,7 @@ function desk() {
     ['样例货源',goods.length],['意向记录',shopRecords().intents.length],['示例留言',records.messages.length],['示例审核',Object.keys(records.decisions).length],
   ] : [['在架款式',data[0][1]],['收到询货',received],['主动联系',initiated],['已记回访',supplierFollowups.length]];
   const byPage = {
-    stock: () => `<div class="metric-grid"><article class="surface metric"><span>本厂样例货源</span><strong>${supplierGoods.length}</strong></article>
+    stock: () => `<div class="metric-grid stock-metrics"><article class="surface metric"><span>本厂样例货源</span><strong>${supplierGoods.length}</strong></article>
       <article class="surface metric"><span>示例询货记录</span><strong>${received}</strong></article></div>
       <section class="section">${heading('本厂款式',link('market','返回货源广场'))}<div class="product-grid">${supplierGoods.map(productCard).join('')}</div></section>`,
     follow: () => `${supplierFollowups.length ? `<div class="surface list">${supplierFollowups.slice().reverse().map((item) => `<div class="list-item"><span class="list-icon">${icon('calendar')}</span><span><strong>${esc(item.name)}</strong><small>${esc(item.text)}</small></span>${pill('计划跟进')}</div>`).join('')}</div>` : empty('暂无已记回访','切换至厂家前台，在客户需求中记入示例回访。',`<a class="button primary" href="${href('buyers',null,'supplier')}">打开厂家前台</a>`)}`,
@@ -519,6 +519,10 @@ function desk() {
     promotion: promotionDesk,
     audit: () => `<div class="surface list">${rows.map(([label,value]) => `<div class="list-item"><span class="list-icon">${icon('chart')}</span><span><strong>${label}</strong><small>当前浏览器演示与样例记录</small></span><strong>${value}</strong></div>`).join('')}</div>`,
   };
+  if (!platform && route.page === 'overview' && route.id === 'stock') {
+    return `${head(editions.supplierDesk.label,esc(factory.supplier)+' · 样例环境',pill('演示环境'))}
+      <section class="section" aria-label="我的货源数据">${heading('我的货源数据',link('overview','运营总览'))}${byPage.stock()}</section>`;
+  }
   if (route.page !== 'overview' && byPage[route.page]) return `${head(route.page === 'stock' ? '我的货源数据' : nav[route.page][0],`${editions[route.key].label} · 示例数据`)}${byPage[route.page]()}`;
   const maximum = Math.max(1,...rows.map((row) => row[1]));
   return `${head(platform ? '运营总览' : editions.supplierDesk.label,platform ? '审核任务与业务活动 · 样例环境' : esc(factory.supplier)+' · 样例环境',pill('演示环境'))}
