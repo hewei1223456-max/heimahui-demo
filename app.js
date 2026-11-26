@@ -23,8 +23,14 @@ const esc = (input = '') => String(input).replace(/[&<>"']/g, (ch) => ({ '&':'&a
 const photo = (name, alt, eager = false) => `<img src="assets/${name}.webp" alt="${esc(alt)}" loading="${eager ? 'eager' : 'lazy'}" decoding="async">`;
 const yuan = (value) => `¥${Number(value).toLocaleString('zh-CN')}`;
 const storageKey = 'heimahui-public-preview-v1';
+const defaultFactoryProductId = 'HM2601';
+const factoryProducts = new Map();
+for (const item of goods) if (!factoryProducts.has(item.supplier)) factoryProducts.set(item.supplier,item);
+const demoFactories = [...factoryProducts.values()];
+const demoFactoryById = id => demoFactories.find(factory => factory.id === id);
 const shopDefaults = () => ({favorites:[], reads:[], intents:[], reports:[], diagnosis:{}, question:'', expert:0, expertStore:''});
-const defaults = () => ({...shopDefaults(), currentOwnerId:'owner-01', ownerRecords:{}, messages:[], followups:[], decisions:{}, promotionPaused:false, promotionChoices:['F01']});
+const defaults = () => ({...shopDefaults(), currentOwnerId:'owner-01', ownerRecords:{}, currentFactoryId:defaultFactoryProductId,
+  factoryRecords:{}, messages:[], followups:[], decisions:{}, promotionPaused:false, promotionChoices:['F01']});
 function readData() {
   try { return { ...defaults(), ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; }
   catch { return defaults(); }
@@ -32,7 +38,10 @@ function readData() {
 let records = readData();
 const demoOwnerById = (id) => previewData.demoOwners.find(shop => shop.id === id);
 const currentDemoOwner = () => demoOwnerById(records.currentOwnerId) || previewData.demoOwners[0];
+const currentDemoFactory = () => demoFactoryById(records.currentFactoryId) || demoFactoryById(defaultFactoryProductId);
+const factoryWorkspace = () => route.key === 'supplier' || route.key === 'supplierDesk';
 function shopRecords() {
+  if (factoryWorkspace()) return records.factoryRecords[currentDemoFactory().id] ||= shopDefaults();
   const shop=currentDemoOwner();
   if (route.key!=='owner' || shop.id==='owner-01') return records;
   return records.ownerRecords[shop.id] ||= shopDefaults();
@@ -282,10 +291,13 @@ function article() {
 function profile() {
   const title = route.key === 'supplier' ? '厂家工作区' : '我的黑马汇';
   const active=route.key==='owner' ? currentDemoOwner() : null;
-  const choose=active ? button('切换示例门店','demo-owners','button secondary','users') : '';
-  return `${head(title, active ? esc(active.shop)+' · '+esc(active.city)+' · '+esc(active.style)+' · 示例门店' : '演示操作保存在当前浏览器。', choose)}
+  const factory=route.key==='supplier' ? currentDemoFactory() : null;
+  const choose=active ? button('切换示例门店','demo-owners','button secondary','users') : factory ? button('切换示例厂家','demo-factories','button secondary','users') : '';
+  const context=active ? esc(active.shop)+' · '+esc(active.city)+' · '+esc(active.style)+' · 示例门店' : factory ? esc(factory.supplier)+' · 示例厂家' : '演示操作保存在当前浏览器。';
+  return `${head(title,context,choose)}
     <div class="surface list">${listLink('favorites','收藏与选货清单',`${shopRecords().favorites.length} 款货源 · ${shopRecords().reads.length} 篇资讯`,'bookmark')}
     ${listLink('messages','一对一咨询',`${previewInquiries().length} 个示例会话`,'message')}
+    ${factory ? listLink('supplier','查看我的厂家主页',esc(factory.supplier),'home',factory.id) : ''}
     ${route.key === 'owner' ? listLink('history','店铺诊断历史',`${shopRecords().reports.length} 份示例报告`,'compass') : button('查看联系名片','contact-card','list-button','user')}
     ${button('重置当前浏览器的演示记录','reset','list-button','close')}</div>`;
 }
@@ -300,15 +312,14 @@ function favorites() {
       <section class="section">${heading('已收藏资讯')}<div class="story-grid">${savedStories.map(storyCard).join('')}</div></section>` :
     empty('还没有收藏','逛逛货源或资讯，收藏后会在这里出现。',`<a class="button primary" href="${href('market')}">去找货源</a>`)}`;
 }
-const demoFactoryProduct = 'HM2601';
 const demoBuyerSide = () => route.key === 'owner' || route.key === 'operator';
 
 function inquiryTarget(id) {
   const product = goods.find(item => item.id === id);
   const buyer = buyers.find(item => item.id === id);
-  if (product) return { product, ownerAccountId: currentDemoOwner().id, factoryProduct: goods.find(item => item.supplier === product.supplier) };
+  if (product) return { product, ownerAccountId: currentDemoOwner().id, factoryProduct: factoryProducts.get(product.supplier) };
   if (buyer) return { buyer, ownerAccountId: buyer.ownerAccountId || buyer.id,
-    factoryProduct: goods.find(item => item.id === demoFactoryProduct) };
+    factoryProduct: currentDemoFactory() };
   return null;
 }
 
@@ -316,26 +327,31 @@ function inquiryId(ownerAccountId, factoryProductId) {
   return `${ownerAccountId}~${factoryProductId}`;
 }
 
-function previewInquiries() {
-  if (route.key === 'platformDesk') return [];
-  const buyerSide = demoBuyerSide();
+function demoInquiryThreads() {
   const threads = new Map();
   records.messages.forEach(message => {
-    const source = inquiryTarget(message.id);
-    const ownerAccountId = message.ownerAccountId || source?.buyer?.id || 'owner-01';
-    const factoryProductId = message.factoryProductId || source?.factoryProduct?.id;
-    if (!factoryProductId || (buyerSide ? ownerAccountId !== currentDemoOwner().id : factoryProductId !== demoFactoryProduct)) return;
-    const factoryProduct = goods.find(item => item.id === factoryProductId);
+    const product = goods.find(item => item.id === message.id);
+    const legacyBuyer = buyers.find(item => item.id === message.id);
+    const ownerAccountId = message.ownerAccountId || legacyBuyer?.ownerAccountId || legacyBuyer?.id || 'owner-01';
+    const factoryProduct = message.factoryProductId ? demoFactoryById(message.factoryProductId) : product ?
+      factoryProducts.get(product.supplier) : legacyBuyer ? demoFactoryById(defaultFactoryProductId) : null;
+    if (!factoryProduct) return;
     const buyer = buyers.find(item => item.id === ownerAccountId || item.ownerAccountId === ownerAccountId);
     const account = buyer ? null : demoOwnerById(ownerAccountId);
-    if (!factoryProduct || (!buyer && !account)) return;
-    const id = inquiryId(ownerAccountId, factoryProductId);
+    if (!buyer && !account) return;
+    const id = inquiryId(ownerAccountId, factoryProduct.id);
     const thread = threads.get(id) || { id, ownerAccountId, factoryProduct, buyer, account, messages: [] };
     thread.messages.push(message);
     threads.delete(id);
     threads.set(id, thread);
   });
   return [...threads.values()].reverse();
+}
+
+function previewInquiries() {
+  if (route.key === 'platformDesk') return [];
+  return demoInquiryThreads().filter(thread=>demoBuyerSide() ? thread.ownerAccountId===currentDemoOwner().id :
+    thread.factoryProduct.id===currentDemoFactory().id);
 }
 
 function inquiryAction(id, initialLabel, klass = 'button primary') {
@@ -369,7 +385,7 @@ function messagesPage() {
       <form class="stack" data-form="compose" data-thread="${thread.id}"><label for="preview-reply">发消息</label><textarea id="preview-reply" name="text" rows="3" maxlength="500" required></textarea><div class="sheet-actions"><button class="button primary" type="submit">保存示例留言${icon('arrow',18)}</button></div></form></section>`;
   }
   const discovery = demoBuyerSide() ? 'market' : route.key === 'supplierDesk' ? 'follow' : 'buyers';
-  return `${head('一对一咨询','演示消息保存在当前浏览器。')}
+  return `${head('一对一咨询',factoryWorkspace() ? esc(currentDemoFactory().supplier)+' · 示例厂家会话' : '演示消息保存在当前浏览器。')}
     ${route.key === 'platformDesk' ? empty('暂无授权工单会话','平台工作台通过审核队列与对应工单处理业务。',`<a class="button primary" href="${href('business')}">打开审核队列</a>`) : threads.length ? `<div class="surface list">${threads.map(thread => listLink('messages',esc(previewPeerName(thread)),esc(thread.messages.at(-1).text),'message',thread.id)).join('')}</div>` :
     empty('暂无咨询记录','从款式详情或客户需求页发起一对一咨询。',`<a class="button primary" href="${href(discovery)}">去${demoBuyerSide() ? '找货源' : '找客户'}</a>`)}`;
 }
@@ -477,23 +493,27 @@ function promotionDesk() {
 }
 function desk() {
   const platform = route.key === 'platformDesk';
-  const supplierGoods = goods.filter(item => item.supplier === '杭州北巷样品间');
-  const supplierProductIds = new Set(supplierGoods.map(item => item.id));
-  const productInquiries = records.messages.filter(m => supplierProductIds.has(m.id) && m.direction === '店主询货');
-  const supplierMessages = records.messages.filter(m => supplierProductIds.has(m.id) || m.id.startsWith('B'));
+  const factory=currentDemoFactory();
+  const supplierGoods=goods.filter(item=>item.supplier===factory.supplier);
+  const supplierThreads=platform?[]:previewInquiries();
+  const firsts=supplierThreads.map(thread=>thread.messages[0]);
+  const received=firsts.filter(first=>first.direction==='店主询货' || (!first.direction && first.sender==='owner')).length;
+  const initiated=firsts.filter(first=>first.direction==='厂家主动咨询' || (!first.direction && first.sender==='supplier')).length;
+  const supplierFollowups=records.followups.filter(item=>(Object.hasOwn(item,'factoryProductId')?item.factoryProductId:defaultFactoryProductId)===factory.id);
+  const supplierEvents=fairs.filter(item=>item.factoryProductId===factory.id);
   const data = platform ? [
     ['在架样例货源',goods.length],['示例活动',fairs.length],['待审核任务',reviews.filter((item) => !records.decisions[item.id]).length],
-  ] : [['本厂样例货源',supplierGoods.length],['示例咨询',supplierMessages.length],['回访记录',records.followups.length]];
+  ] : [['本厂样例货源',supplierGoods.length],['示例咨询',supplierThreads.length],['回访记录',supplierFollowups.length]];
   const rows = platform ? [
     ['样例货源',goods.length],['意向记录',shopRecords().intents.length],['示例留言',records.messages.length],['示例审核',Object.keys(records.decisions).length],
-  ] : [['在架款式',data[0][1]],['收到询货',supplierMessages.filter((m) => m.direction === '店主询货').length],['主动联系',supplierMessages.filter((m) => m.direction === '厂家主动咨询').length],['已记回访',records.followups.length]];
+  ] : [['在架款式',data[0][1]],['收到询货',received],['主动联系',initiated],['已记回访',supplierFollowups.length]];
   const byPage = {
     stock: () => `<div class="metric-grid"><article class="surface metric"><span>本厂样例货源</span><strong>${supplierGoods.length}</strong></article>
-      <article class="surface metric"><span>示例询货记录</span><strong>${productInquiries.length}</strong></article></div>
+      <article class="surface metric"><span>示例询货记录</span><strong>${received}</strong></article></div>
       <section class="section">${heading('本厂款式',link('market','返回货源广场'))}<div class="product-grid">${supplierGoods.map(productCard).join('')}</div></section>`,
-    follow: () => `${records.followups.length ? `<div class="surface list">${records.followups.slice().reverse().map((item) => `<div class="list-item"><span class="list-icon">${icon('calendar')}</span><span><strong>${esc(item.name)}</strong><small>${esc(item.text)}</small></span>${pill('计划跟进')}</div>`).join('')}</div>` : empty('暂无已记回访','切换至厂家前台，在客户需求中记入示例回访。',`<a class="button primary" href="${href('buyers',null,'supplier')}">打开厂家前台</a>`)}`,
-    events: () => `<div class="story-grid">${fairs.filter((item) => item.id === 'F01').map(fairCard).join('')}</div>`,
-    company: () => `<div class="surface stack form-layout"><h2>杭州北巷样品间</h2><p>示例主体。经营数据和记录由当前演示中的操作产生。</p>${button('查看联系名片','contact-card','button secondary','user')}</div>`,
+    follow: () => `${supplierFollowups.length ? `<div class="surface list">${supplierFollowups.slice().reverse().map((item) => `<div class="list-item"><span class="list-icon">${icon('calendar')}</span><span><strong>${esc(item.name)}</strong><small>${esc(item.text)}</small></span>${pill('计划跟进')}</div>`).join('')}</div>` : empty('暂无已记回访','切换至厂家前台，在客户需求中记入示例回访。',`<a class="button primary" href="${href('buyers',null,'supplier')}">打开厂家前台</a>`)}`,
+    events: () => supplierEvents.length ? `<div class="story-grid">${supplierEvents.map(fairCard).join('')}</div>` : empty('本厂暂无样例活动','可在订货会广场查看公开场次。',`<a class="button secondary" href="${href('fairs')}">打开订货会广场</a>`),
+    company: () => `<div class="surface stack form-layout"><h2>${esc(factory.supplier)}</h2><p>示例主体。经营数据和记录由当前演示中的操作产生。</p><div class="button-row">${button('查看联系名片','contact-card','button secondary','user')}${link('supplier','查看我的厂家主页','arrow',factory.id)}${button('切换示例厂家','demo-factories','text-link','chevron')}</div></div>`,
     business: reviewList,
     knowledge: () => `<div class="surface list">${experts.map((item, index) => button(`${item.label} <span class="muted">${item.detail}</span>`,'desk-expert','list-button','book',String(index))).join('')}</div>`,
     promotion: promotionDesk,
@@ -501,7 +521,7 @@ function desk() {
   };
   if (route.page !== 'overview' && byPage[route.page]) return `${head(route.page === 'stock' ? '我的货源数据' : nav[route.page][0],`${editions[route.key].label} · 示例数据`)}${byPage[route.page]()}`;
   const maximum = Math.max(1,...rows.map((row) => row[1]));
-  return `${head(platform ? '运营总览' : editions.supplierDesk.label,platform ? '审核任务与业务活动 · 样例环境' : '杭州北巷样品间 · 样例环境',pill('演示环境'))}
+  return `${head(platform ? '运营总览' : editions.supplierDesk.label,platform ? '审核任务与业务活动 · 样例环境' : esc(factory.supplier)+' · 样例环境',pill('演示环境'))}
     <div class="metric-grid">${data.map(([label,value]) => `<article class="surface metric"><span>${label}</span><strong>${value}</strong></article>`).join('')}</div>
     <div class="desk-grid"><section class="surface stack"><div><h2>${platform ? '运营活动' : '获客与回访'}</h2><p>样例及当前浏览器产生的记录</p></div>
       <div class="bar-chart">${rows.map(([label,value]) => `<div><span>${label}</span><meter min="0" max="${maximum}" value="${value}" aria-label="${label}">${value}</meter><strong>${value}</strong></div>`).join('')}</div></section>
@@ -556,7 +576,15 @@ function chooseExpertStore() {
 }
 function chooseEdition() {
   const groups = ['移动前台','网页后台'].map((group) => `<div class="edition-group"><h3>${group}</h3>${Object.entries(editions).filter(([,entry]) => entry.group === group).map(([key,entry]) => `<a class="edition-choice" href="${href(entry.first,null,key)}" ${route.key === key ? 'aria-current="true"' : ''}><span>${entry.label}</span>${icon(route.key === key ? 'check' : 'chevron',17)}</a>`).join('')}</div>`);
-  openDialog('选择演示身份',`<p class="muted">查看各身份的日常工作。操作限于当前浏览器的样例空间。</p>${groups.join('')}`);
+  openDialog('选择演示身份',`<p class="muted">查看各身份的日常工作。操作限于当前浏览器的样例空间。</p>${groups.join('')}
+    <div class="edition-group"><button class="edition-choice preview-factory-option" type="button" data-action="demo-factories"><span>切换示例厂家<small>${esc(currentDemoFactory().supplier)}</small></span>${icon('chevron',17)}</button></div>`);
+}
+function chooseDemoFactory() {
+  const current=currentDemoFactory();
+  openDialog('切换示例厂家',`<div class="edition-group">${demoFactories.map(factory=>`<button class="edition-choice preview-factory-option" type="button" data-action="select-demo-factory" data-id="${factory.id}" aria-pressed="${factory.id===current.id}">
+    <span>${esc(factory.supplier)}<small>${esc(factory.city)}</small></span>${icon(factory.id===current.id?'check':'chevron',17)}</button>`).join('')}</div>
+    ${button('返回演示身份','editions','text-link','chevron')}`);
+  $('#sheet-title').focus({preventScroll:true});
 }
 function globalSearch() {
   openDialog('搜索货源',`<form class="stack" data-form="global-search"><label for="global-query">输入款名、款号或厂家</label><input id="global-query" type="search" name="query" value="${esc(state.query)}" autofocus><div class="sheet-actions"><button type="submit" class="button primary">搜索${icon('arrow',18)}</button></div></form>`);
@@ -655,6 +683,18 @@ const actions = {
   close: () => dialog.close(),
   search: globalSearch,
   editions: chooseEdition,
+  'demo-factories': chooseDemoFactory,
+  'select-demo-factory': (id) => {
+    const next=demoFactoryById(id);
+    if (!next) return;
+    records.currentFactoryId=next.id;
+    save();dialog.close();
+    if (!factoryWorkspace()) {location.hash=href('buyers',null,'supplier');return;}
+    if (['messages','conversation-peer'].includes(route.page)) {go('messages');return;}
+    if (route.page==='supplier') {go('supplier',next.id);return;}
+    render();
+    $('[data-action="editions"]')?.focus({preventScroll:true});
+  },
   'demo-owners': () => openDialog('切换示例门店',`<div class="surface list">${previewData.demoOwners.map(shop =>
     `<button type="button" class="list-item demo-owner-option" data-action="select-demo-owner" data-id="${shop.id}" aria-pressed="${shop.id===currentDemoOwner().id}">
       <span class="list-icon">${icon('user')}</span><span><strong>${esc(shop.shop)}</strong><small>${esc(shop.city)} · ${esc(shop.style)}</small></span>${icon(shop.id===currentDemoOwner().id?'check':'chevron',17)}</button>`).join('')}</div>`),
@@ -816,7 +856,7 @@ const forms = {
     const buyer = buyers.find((item) => item.id === form.dataset.id);
     const text = values.get('text').trim();
     if (!buyer || !text) { toast('请输入下一步'); return; }
-    records.followups.push({id:buyer.id,name:buyer.name,text});
+    records.followups.push({id:buyer.id,name:buyer.name,text,factoryProductId:factoryWorkspace()?currentDemoFactory().id:null});
     save(); dialog.close(); toast('已保存示例回访计划');
   },
   reject: (values,form) => {

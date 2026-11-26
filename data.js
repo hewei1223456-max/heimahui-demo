@@ -39,9 +39,9 @@ const previewData = (() => {
   ];
 
   const fairs = [
-    { id: 'F01', title: '冬季货盘开放日', organizer: '北巷样品间', type: '内部订货会', season: '冬季订货会', city: '杭州', date: '12 月 06–07 日', year: '2026', image: 'shop', description: '以通勤外套与轻针织为主，现场集中看样和讨论补货节奏。适合冬季中段需要少量补款的门店。' },
-    { id: 'F02', title: '濮院早春针织看样会', organizer: '原织样品间', type: '市场展会', season: '春季订货会', city: '嘉兴', date: '12 月 12–13 日', year: '2026', image: 'texture', description: '围绕早春打底、开衫和叠穿组合。样例场次支持意向登记。' },
-    { id: 'F03', title: '南方女装春夏面料选品周', organizer: '序里样品间', type: '行业展会', season: '春夏订货会', city: '广州', date: '12 月 18–20 日', year: '2026', image: 'rack', description: '聚焦春夏轻薄面料与小单多款货盘。店主可以先整理拟看品类。' },
+    { id: 'F01', factoryProductId: 'HM2601', title: '冬季货盘开放日', organizer: '北巷样品间', type: '内部订货会', season: '冬季订货会', city: '杭州', date: '12 月 06–07 日', year: '2026', image: 'shop', description: '以通勤外套与轻针织为主，现场集中看样和讨论补货节奏。适合冬季中段需要少量补款的门店。' },
+    { id: 'F02', factoryProductId: 'HM2604', title: '濮院早春针织看样会', organizer: '原织样品间', type: '市场展会', season: '春季订货会', city: '嘉兴', date: '12 月 12–13 日', year: '2026', image: 'texture', description: '围绕早春打底、开衫和叠穿组合。样例场次支持意向登记。' },
+    { id: 'F03', factoryProductId: 'HM2603', title: '南方女装春夏面料选品周', organizer: '序里样品间', type: '行业展会', season: '春夏订货会', city: '广州', date: '12 月 18–20 日', year: '2026', image: 'rack', description: '聚焦春夏轻薄面料与小单多款货盘。店主可以先整理拟看品类。' },
   ];
 
   const stories = [
