@@ -25,6 +25,8 @@ const previewData = (() => {
     { id: 'HM2606', title: '岩灰短夹克两件套', supplier: '杭州北巷样品间', city: '杭州', style: '通勤极简', category: '套装', price: 258, minimum: 5, status: '预售', image: 'lookbook-set', dispatch: '7–10 天', fits: '上衣裤装同色，适合完整套陈。补货时先确认上下装尺码组合。' },
     { id: 'HM2607', title: '浅驼束腰中长风衣', supplier: '平湖度里样品间', city: '平湖', style: '自然休闲', category: '外套', price: 298, minimum: 5, status: '现货', image: 'lookbook-coat', dispatch: '2–3 天', fits: '单排扣配束带，季节跨度长。试拿时可验证长度与目标身高的适配。' },
     { id: 'HM2608', title: '烟棕收腰连衣裙', supplier: '广州序里样品间', city: '广州', style: '法式简约', category: '裙装', price: 228, minimum: 3, status: '现货', image: 'lookbook-dress', dispatch: '2–3 天', fits: '低饱和调，适合以配饰拆分日常与聚会搭配。' },
+    { id: 'HM2609', title: '浅岩重磅长风衣', supplier: '深圳织序样品间', city: '深圳', style: '轻熟通勤', category: '外套', price: 428, minimum: 6, status: '预售', image: 'lookbook-coat', dispatch: '6–8 天', fits: '示例款，用于核对 400 元及以上的开放价带。' },
+    { id: 'HM2610', title: '暖棕复古针织开衫', supplier: '即墨纹理样品间', city: '即墨', style: '休闲复古', category: '针织', price: 158, minimum: 36, status: '现货', image: 'lookbook-cardigan', dispatch: '2–4 天', fits: '示例款，用于核对 31 件及以上的起批条件。' },
   ];
 
   const fairs = [
@@ -34,7 +36,7 @@ const previewData = (() => {
   ];
 
   const stories = [
-    { id: 'A01', topic: '组货笔记', title: '一件外套，怎样搭出三组能卖的货？', intro: '先定客群与价格带，再用三种穿着场景验证搭配。', image: 'lookbook-journal', paragraphs: ['先选一件足够代表门店风格的外套作为主款。围绕通勤、周末和温差三个场景分别选内搭与下装。尽量复用鞋包与配色，减少为搭配额外备货。', '把三套搭配放到同一个陈列点，记录顾客先摸哪件、成套试穿率和单件成交分布。用一周数据决定补货时是加深主款，还是补齐更常被搭走的配款。'] },
+    { id: 'A01', topic: '组货笔记', title: '一件外套，怎样搭出三组能卖的货？', intro: '先定客群与价格带，再用三种穿着场景验证搭配。', image: 'season-atelier', paragraphs: ['先选一件足够代表门店风格的外套作为主款。围绕通勤、周末和温差三个场景分别选内搭与下装。尽量复用鞋包与配色，减少为搭配额外备货。', '把三套搭配放到同一个陈列点，记录顾客先摸哪件、成套试穿率和单件成交分布。用一周数据决定补货时是加深主款，还是补齐更常被搭走的配款。'] },
     { id: 'A02', topic: '经营方法', title: '小单试拿，先把这三个条件问清', intro: '把起批、混批和补货拆开问，才能判断试错成本。', image: 'rack', paragraphs: ['第一是达到起批的计算单位。件、手和包对单款现金占用的影响不同。第二是混批是否按款、按色、按尺码计算。第三是补单从确认到实际发货所需的时间。', '条件问清之后再排尺码，不确定的物流费用保留待确认。每次试拿记录款号、计划数量、店内搭配和一周后复评时间。'] },
     { id: 'A03', topic: '产业带观察', title: '换季针织补货，稳住两类核心款', intro: '把当季好卖款与过渡期叠穿款分开跟进。', image: 'knit', paragraphs: ['换季时优先看一周在售款的试穿和实际出货。已经找到稳定客群的畅销色适合验证小批补货，单次补单深度取决于交期与销售窗口。', '选择过渡期针织时优先评估叠穿与色系兼容性。调整货架后观察连带和尺码需求，保持小步试错。'] },
   ];
@@ -58,5 +60,43 @@ const previewData = (() => {
     { label: '装修建议专家', detail: '店铺动线与陈列改造', question: '如何判断进门第一组陈列是否有效？' },
   ];
 
-  return { editions, nav, goods, fairs, stories, buyers, reviews, experts };
+  const expertStores = [
+    { id:'taiyuan-zihe',name:'太原姊和',city:'太原' },
+    { id:'weifang-luosha',name:'潍坊罗莎',city:'潍坊' },
+    { id:'huainan-guou',name:'淮南古欧',city:'淮南' },
+    { id:'guangde-zhishang',name:'广德致尚',city:'广德' },
+    { id:'cixi-dp',name:'慈溪 DP',city:'慈溪' },
+    { id:'hefei-tashidai',name:'合肥她时代',city:'合肥' },
+    { id:'hefei-ruoma',name:'合肥若麻',city:'合肥' },
+    { id:'hefei-muzio',name:'合肥木子喔',city:'合肥' },
+  ];
+
+  const catalogFacets = {
+    styles:['韩系','通勤','新中式','极简','轻熟','休闲','复古','甜美','大码','运动休闲'],
+    origins:[
+      ['江浙沪',['杭州','濮院','平湖','海宁','昆山','常熟','上海']],
+      ['广东',['广州','深圳','虎门']],
+      ['华中',['武汉','郑州']],
+      ['山东与辽宁',['即墨','大连']],
+    ],
+    categories:['针织衫','衬衫','连衣裙','半裙','休闲裤','牛仔裤','外套','大衣','羽绒服','套装','T恤','防晒衣'],
+    price:[
+      ['100元以下',0,100],['100—200元',100,200],['200—400元',200,400],['400元及以上',400],
+    ],
+    minimum:[
+      ['1—5件',1,5],['6—10件',6,10],['11—30件',11,30],['31件及以上',31],
+    ],
+  };
+
+  const stockStyles=[
+    ['通勤','极简'],['通勤','极简'],['休闲','极简'],['轻熟','复古'],['轻熟','通勤'],
+    ['通勤','极简'],['休闲','通勤'],['轻熟','复古'],['轻熟','通勤'],['休闲','复古'],
+  ];
+  const stockCategories=['外套','休闲裤','衬衫','针织衫','半裙','套装','外套','连衣裙','外套','针织衫'];
+  goods.forEach((item,index)=>{
+    item.styleTags=stockStyles[index];
+    item.catalogCategory=stockCategories[index];
+  });
+
+  return { editions, nav, goods, fairs, stories, buyers, reviews, experts, expertStores, catalogFacets };
 })();
