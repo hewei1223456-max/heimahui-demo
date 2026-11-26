@@ -191,6 +191,7 @@
 .promotion-desk-row { padding:14px 0; border-top:1px solid var(--line); }
 .promotion-desk-row h3 { margin:3px 0; }
 .promotion-desk-row .button[aria-pressed="true"] { background:#e8ede5; }
+.market-head-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
 @media (max-width:570px) {
   .promotion-rail { min-height:68px; }
   .promotion-photo { flex-basis:clamp(51px,18vw,88px); }
@@ -199,6 +200,8 @@
   .promotion-controls { padding:0 2px; }
   .promotion-rail:has(.promotion-controls) .promotion-hit>svg { display:none; }
   .page-market .page-heading .button { flex:none; padding-inline:12px; white-space:nowrap; }
+  .page-market .page-heading:has(.market-head-actions) { flex-wrap:wrap; }
+  .market-head-actions { flex-basis:100%; justify-content:flex-start; }
 }
 .page-market .search-bar { border-radius:9px }
 .page-market .section-heading h2 { font-size:clamp(1.34rem,2.45vw,2rem) }

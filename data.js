@@ -1,18 +1,27 @@
 'use strict';
 
 const previewData = (() => {
+  const demoOwners = [
+    {id:'owner-01',name:'周禾',shop:'简序女装',city:'杭州',style:'通勤'},
+    {id:'owner-03',name:'许澄',shop:'澄衣集',city:'郑州',style:'通勤'},
+    {id:'owner-04',name:'顾棠',shop:'棠里女装',city:'南京',style:'极简'},
+    {id:'owner-05',name:'沈岚',shop:'岚间衣橱',city:'武汉',style:'轻熟'},
+    {id:'owner-06',name:'宋遥',shop:'遥知衣舍',city:'济南',style:'休闲'},
+    {id:'owner-07',name:'江芷',shop:'江岸衣集',city:'广州',style:'新中式'},
+    {id:'owner-08',name:'闻溪',shop:'闻溪选衣',city:'深圳',style:'韩系'},
+  ];
   const editions = {
     owner: { label: '店主版', group: '移动前台', first: 'info', nav: ['info', 'market', 'diagnosis', 'profile'] },
     supplier: { label: '厂家版', group: '移动前台', first: 'buyers', nav: ['info', 'market', 'buyers', 'profile'] },
     operator: { label: '平台管理版', group: '移动前台', first: 'operations', nav: ['info', 'market', 'diagnosis', 'buyers', 'operations'] },
-    supplierDesk: { label: '厂家经营后台', group: '网页后台', first: 'overview', nav: ['overview', 'stock', 'follow', 'events', 'company'] },
+    supplierDesk: { label: '厂家运营后台', group: '网页后台', first: 'overview', nav: ['overview', 'market', 'stock', 'follow', 'events', 'company'] },
     platformDesk: { label: '平台管理后台', group: '网页后台', first: 'overview', nav: ['overview', 'business', 'knowledge', 'promotion', 'audit'] },
   };
 
   const nav = {
     info: ['资讯', 'home'], market: ['找货源', 'bag'], diagnosis: ['店铺诊断', 'compass'], profile: ['我的', 'user'],
     buyers: ['找客户', 'users'], operations: ['平台管理', 'grid'], overview: ['经营总览', 'chart'],
-    stock: ['货源与内容', 'bag'], follow: ['客户与回访', 'users'], events: ['订货会与推广', 'calendar'], company: ['企业与服务', 'user'],
+    stock: ['我的货源', 'bag'], follow: ['客户与回访', 'users'], events: ['订货会与推广', 'calendar'], company: ['企业与服务', 'user'],
     business: ['业务运营', 'grid'], knowledge: ['专家与知识', 'book'], promotion: ['渠道与推广', 'calendar'], audit: ['数据与审计', 'chart'],
   };
 
@@ -98,5 +107,5 @@ const previewData = (() => {
     item.catalogCategory=stockCategories[index];
   });
 
-  return { editions, nav, goods, fairs, stories, buyers, reviews, experts, expertStores, catalogFacets };
+  return { editions, nav, goods, fairs, stories, buyers, reviews, experts, expertStores, catalogFacets, demoOwners };
 })();

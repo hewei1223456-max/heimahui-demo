@@ -142,6 +142,15 @@ input:not([type="checkbox"]),textarea,select{border:1px solid var(--line);border
 .search-bar input,.stepper input{border:0;background:transparent}
 textarea{width:100%;resize:vertical}
 .form-layout{max-width:760px}
+.preview-conversation{max-width:760px}
+.preview-message-log{display:grid;gap:12px;max-height:min(48vh,440px);overflow:auto;padding:4px;overscroll-behavior:contain;scrollbar-gutter:stable}
+.preview-message{justify-self:start;max-width:min(82%,34rem);padding:11px 14px;border-radius:14px;background:var(--paper,#f2f1eb);color:var(--ink);overflow-wrap:anywhere}
+.preview-message.mine{justify-self:end;background:#e6ede5}
+.preview-message small{color:var(--muted);font-size:.77rem}
+.preview-message p{margin:4px 0 0;color:inherit;white-space:pre-wrap}
+.preview-conversation form{border-top:1px solid var(--line);padding-top:16px}
+.preview-thread-heading .button{white-space:nowrap}
+@media(max-width:570px){.preview-thread-heading .page-heading{display:grid;justify-items:start;gap:9px;margin-bottom:14px}.preview-thread-heading h1{font-size:2.1rem}}
 .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .field-grid input,.field-grid select,.pick-row select{width:100%}
 .list{display:grid;padding:3px 13px}
@@ -151,6 +160,8 @@ textarea{width:100%;resize:vertical}
 .list-item small,.list-button .muted{display:block;color:var(--muted);font-size:.83rem;margin-top:4px;overflow-wrap:anywhere}
 .list-button:not(:has(.muted)){display:flex}
 .list-button .muted{grid-column:2/-1}
+.demo-owner-option{width:100%;color:var(--ink)}
+.demo-owner-option[aria-pressed="true"]>svg{color:var(--evergreen)}
 .list-icon{display:grid;place-items:center;flex:none;background:var(--green-light);color:var(--green);width:39px;height:39px;border-radius:11px}
 .empty{display:grid;place-items:center;gap:10px;text-align:center;padding:34px 16px;color:var(--green)}
 .empty h2{font-size:1.3rem}
