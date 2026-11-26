@@ -387,6 +387,8 @@ function currentExpert() {
   return {expert,store};
 }
 function diagnosis() {
+  if (route.id==='measurements') return `${head('经营数据测算','示例工具 · 在当前页面计算',link('diagnosis','返回专家咨询','arrow','expert'))}
+    <div class="preview-measure-workbench" data-preview-measurements><p role="status">正在读取测算模板…</p></div>`;
   const values = shopRecords().diagnosis;
   const reportMode = route.id !== 'expert';
   const {expert,store} = currentExpert();
@@ -407,6 +409,7 @@ function diagnosis() {
       <section class="consult-context"><h2>${store?esc(store.name):expert.label}</h2>
         <p>${store?'大店案例 · 方法角色':expert.detail}</p>
         ${button(store?'换一家门店':'选择专家',store?'expert-stores':'experts','button secondary','chevron')}
+        ${!store && expert.label==='数据测算专家'?link('diagnosis','打开经营测算','arrow','measurements'):''}
         ${store?'':button('浏览大店专家','expert-stores','text-link','arrow')}
       </section>
       <section class="consult-composer"><label for="expert-question">你想解决什么经营问题？</label>
@@ -640,6 +643,12 @@ function render({stage = false} = {}) {
   $('.stepper [data-action="quantity-plus"]')?.setAttribute('aria-label','增加数量');
   const messageLog = $('.preview-message-log');
   if (messageLog) messageLog.scrollTop = messageLog.scrollHeight;
+  const measure=$('[data-preview-measurements]');
+  if (measure) import('./measurement-preview.js').then(({mountMeasurementPreview})=>{
+    if (measure.isConnected) mountMeasurementPreview(measure);
+  }).catch(()=>{
+    if (measure.isConnected) measure.innerHTML=`<p role="status">测算模板暂未载入。${link('diagnosis','返回专家咨询','arrow','expert')}</p>`;
+  });
   updatePromotionRail();
 }
 const actions = {
