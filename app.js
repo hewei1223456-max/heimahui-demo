@@ -129,14 +129,14 @@ function renderShell() {
   const isDesk = route.key.endsWith('Desk');
   document.body.classList.toggle('is-console',isDesk);
   $('#top').innerHTML = `<div class="top-inner">
-    <a class="brand" href="${href(edition.first)}"><img src="assets/mark.svg" alt="" width="38" height="38"><span>黑马汇</span></a>
+    <a class="brand" href="${href(edition.first)}"><img src="assets/mark.svg?v=20261127" alt="" width="38" height="38"><span>衣界群星</span></a>
     ${isDesk ? `<span class="top-context">${edition.label}</span>` : `<nav class="desktop-nav" aria-label="主导航">${navItems()}</nav>`}
     <div class="top-actions"><button type="button" class="icon-button top-search" data-action="search" aria-label="搜索货源">${icon('search')}</button>
       <a class="icon-button top-message" aria-label="消息" href="${href('messages')}">${icon('message')}</a>
       <button type="button" data-action="editions" class="edition-button" aria-label="切换演示身份，当前${edition.label}"><span class="edition-mark"></span><span>${edition.label}</span>${icon('down',14)}</button></div>
   </div>`;
   $('#mobile-nav').innerHTML = navItems(true,true);
-  $('#foot').innerHTML = `<div><a class="brand foot-brand" href="${href(edition.first)}"><img src="assets/mark.svg" alt="" width="29" height="29"><span>黑马汇</span></a><p>交互演示 · 内容及业务记录均为样例</p></div>${button(`查看五个版本${icon('diagonal',16)}`,'editions','text-link')}`;
+  $('#foot').innerHTML = `<div><a class="brand foot-brand" href="${href(edition.first)}"><img src="assets/mark.svg?v=20261127" alt="" width="29" height="29"><span>衣界群星</span></a><p>交互演示 · 内容及业务记录均为样例</p></div>${button(`查看五个版本${icon('diagonal',16)}`,'editions','text-link')}`;
 }
 function productCard(item) {
   const favorite = shopRecords().favorites.includes(item.id);
@@ -160,7 +160,7 @@ function info() {
     third,
   ];
   const consultation=editions[route.key].nav.includes('diagnosis');
-  return `<section class="brand-stage" aria-label="黑马汇选货">
+  return `<section class="brand-stage" aria-label="衣界群星选货">
       <div class="brand-stage-copy">
         <h1>好货，值得细选。</h1>
         <p class="stage-intro">女装店主的选货与经营工作台</p>
@@ -202,7 +202,7 @@ function market() {
   const count = Object.values(state.filters).flat().length;
   const filters = button(`筛选${count ? ` · ${count}` : ''}`,'filters','button secondary','filter');
   const actions = route.key === 'supplierDesk' ?
-    `<div class="market-head-actions"><a class="button secondary" href="${href('overview','stock')}">${icon('chart',19)}查看我的货源数据</a>${filters}</div>` : filters;
+    `<div class="market-head-actions"><a class="button secondary" href="${href('stock')}">${icon('chart',19)}查看我的货源数据</a>${filters}</div>` : filters;
   return `${head(marketTitle(),'按门店风格、价格带与拿货条件筛选。',actions)}
     <form class="search-bar" data-form="market"><label class="sr-only" for="market-query">搜索款名、款号、品类和厂家</label>${icon('search',21)}<input type="search" id="market-query" name="query" value="${esc(state.query)}" placeholder="搜款名或厂家"><button type="submit" class="button primary">搜索</button></form>
     ${count ? `<div class="active-filters">${Object.entries(state.filters).flatMap(([key,values]) => values.map((value) => `<button type="button" class="segment selected" data-action="remove-filter" data-group="${key}" data-id="${esc(value)}" aria-label="移除${esc(value)}">${esc(value)}${icon('close',14)}</button>`)).join('')}${button('清空','clear-filters','text-link')}</div>` : ''}
@@ -284,12 +284,12 @@ function article() {
   const item = stories.find((one) => one.id === route.id);
   if (!item) return missing('info','资讯');
   const saved = shopRecords().reads.includes(item.id);
-  return `${back('info','返回资讯')}<article class="article-detail"><div class="eyebrow">${item.topic} · 黑马汇示例编辑部</div><h1>${item.title}</h1><p class="article-lede">${item.intro}</p>
+  return `${back('info','返回资讯')}<article class="article-detail"><div class="eyebrow">${item.topic} · 衣界群星示例编辑部</div><h1>${item.title}</h1><p class="article-lede">${item.intro}</p>
     <div class="article-image">${photo(item.image,'',true)}</div>${item.paragraphs.map((part) => `<p>${part}</p>`).join('')}${button(saved ? '已收藏' : '收藏资讯','read-save','button secondary','bookmark',item.id)}</article>`;
 }
 
 function profile() {
-  const title = route.key === 'supplier' ? '厂家工作区' : '我的黑马汇';
+  const title = route.key === 'supplier' ? '厂家工作区' : '我的衣界群星';
   const active=route.key==='owner' ? currentDemoOwner() : null;
   const factory=route.key==='supplier' ? currentDemoFactory() : null;
   const choose=active ? button('切换示例门店','demo-owners','button secondary','users') : factory ? button('切换示例厂家','demo-factories','button secondary','users') : '';
@@ -508,7 +508,7 @@ function desk() {
     ['样例货源',goods.length],['意向记录',shopRecords().intents.length],['示例留言',records.messages.length],['示例审核',Object.keys(records.decisions).length],
   ] : [['在架款式',data[0][1]],['收到询货',received],['主动联系',initiated],['已记回访',supplierFollowups.length]];
   const byPage = {
-    stock: () => `<div class="metric-grid stock-metrics"><article class="surface metric"><span>本厂样例货源</span><strong>${supplierGoods.length}</strong></article>
+    stock: () => `<div class="metric-grid"><article class="surface metric"><span>本厂样例货源</span><strong>${supplierGoods.length}</strong></article>
       <article class="surface metric"><span>示例询货记录</span><strong>${received}</strong></article></div>
       <section class="section">${heading('本厂款式',link('market','返回货源广场'))}<div class="product-grid">${supplierGoods.map(productCard).join('')}</div></section>`,
     follow: () => `${supplierFollowups.length ? `<div class="surface list">${supplierFollowups.slice().reverse().map((item) => `<div class="list-item"><span class="list-icon">${icon('calendar')}</span><span><strong>${esc(item.name)}</strong><small>${esc(item.text)}</small></span>${pill('计划跟进')}</div>`).join('')}</div>` : empty('暂无已记回访','切换至厂家前台，在客户需求中记入示例回访。',`<a class="button primary" href="${href('buyers',null,'supplier')}">打开厂家前台</a>`)}`,
@@ -519,10 +519,6 @@ function desk() {
     promotion: promotionDesk,
     audit: () => `<div class="surface list">${rows.map(([label,value]) => `<div class="list-item"><span class="list-icon">${icon('chart')}</span><span><strong>${label}</strong><small>当前浏览器演示与样例记录</small></span><strong>${value}</strong></div>`).join('')}</div>`,
   };
-  if (!platform && route.page === 'overview' && route.id === 'stock') {
-    return `${head(editions.supplierDesk.label,esc(factory.supplier)+' · 样例环境',pill('演示环境'))}
-      <section class="section" aria-label="我的货源数据">${heading('我的货源数据',link('overview','运营总览'))}${byPage.stock()}</section>`;
-  }
   if (route.page !== 'overview' && byPage[route.page]) return `${head(route.page === 'stock' ? '我的货源数据' : nav[route.page][0],`${editions[route.key].label} · 示例数据`)}${byPage[route.page]()}`;
   const maximum = Math.max(1,...rows.map((row) => row[1]));
   return `${head(platform ? '运营总览' : editions.supplierDesk.label,platform ? '审核任务与业务活动 · 样例环境' : esc(factory.supplier)+' · 样例环境',pill('演示环境'))}
@@ -629,7 +625,7 @@ async function copyTrial() {
   if (quantity===null) { updateEstimate(); $('#quantity').focus(); return; }
   const countLine=quantity<item.minimum?`计划试拿 ${quantity} 件，低于起批量，货款待确认`:
     `计划试拿 ${quantity} 件 × ${yuan(item.price)}，货款估算 ${yuan(quantity * item.price)}`;
-  const lines = `黑马汇 · 示例试拿清单\n${item.title}（${item.id}）\n厂家：${item.supplier}\n${item.status}，${item.minimum} 件起，预计 ${item.dispatch} 发货\n${countLine}\n请确认混批、补货与运费。`;
+  const lines = `衣界群星 · 示例试拿清单\n${item.title}（${item.id}）\n厂家：${item.supplier}\n${item.status}，${item.minimum} 件起，预计 ${item.dispatch} 发货\n${countLine}\n请确认混批、补货与运费。`;
   try {
     await navigator.clipboard.writeText(lines);
     if (route.page==='product'&&route.id===item.id) toast('已复制试拿清单');
@@ -670,7 +666,7 @@ function render({stage = false} = {}) {
   main.innerHTML = isDesk
     ? `<aside class="desk-sidebar"><nav class="desktop-nav" aria-label="后台导航">${navItems(true)}</nav></aside><div class="desk-body">${markup}</div>`
     : markup;
-  document.title = `${$('.page h1')?.textContent || '女装选货与经营'} · 黑马汇`;
+  document.title = `${$('.page h1')?.textContent || '女装选货与经营'} · 衣界群星`;
   $('.stepper [data-action="quantity-minus"]')?.setAttribute('aria-label','减少数量');
   $('.stepper [data-action="quantity-plus"]')?.setAttribute('aria-label','增加数量');
   const messageLog = $('.preview-message-log');
